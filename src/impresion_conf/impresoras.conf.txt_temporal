@@ -1,0 +1,10 @@
+# /dev/lp0
+# /dev/ttyS1
+credito cups miniprinter 192.168.0.4
+contado cups miniprinter 192.168.0.5
+factura Paralelo 021
+corte_caja cups miniprinter 192.168.0.46
+credito_abono paralelo 1
+corte_all_caja cups miniprinter 192.168.0.47
+pedidos_paso1 cups miniprinter 192.168.0.48
+default serial 3dd

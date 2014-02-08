@@ -1,0 +1,27 @@
+nombre 6 10 92 1
+direccion 7 10 92 1
+ciudad 8 10 64 1
+rfc 8 73 92 1
+dia 7 102 103  1
+mes 7 113 117 1
+ano 7 126 130 1
+cantidad_letra 21 1 52 2
+observaciones 24 20 53 1
+subtotal 21 111 130 2
+iva 22 111 130 2
+total 23 111 130 2
+cantidad_inicio 11 1 11 2
+descripcion_inicio 11 15 90 1
+p_unitario_inicio 11 94 107 2
+importe_inicio 11 111 130 2
+cantidad_fin 19 1 11 2
+descripcion_fin 19 15 90 1
+p_unitario_fin 19 94 107 2
+importe_fin 19 111 130 2
+fin_archivo 30 1 1 1
+
+
+//AGREGAR ESTO DE ABAJO DE ACUERDO A LAS COORDENADAS QUE SE QUIERAN!..
+num_factura 1 100 110 1
+num_venta 2 100 110 1
+num_cliente 5 10 92 1

@@ -1,0 +1,3 @@
+V 0.9.9.9
+-Se cambio la relacion en la base de datos... se eliminaron las tablas Venta_Factura y Venta_Factura_Relacion
+-Se valido para que solo el usuario que hizo una venta pueda cancelarla.

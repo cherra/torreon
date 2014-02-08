@@ -1,0 +1,10 @@
+MATICA LX - Telematica Libre de Mèxico S.A. de C.
+SISTEMA :CAJA CARNES BECERRA
+VERSION : 0.9.9.1
+
+- Se agrego la ventana de condiguracion de impresoras
+- Se hizo libreria dinamica de modificacion de clientes
+- Se arreglo la impresion de la cuenta ontable en la libreria impresion_ticket.h
+- Se agregaron las modificaciones de los errores de imresion de factura que modifico Juan en otra version.
+
+- Se modifico la funcion sacar_fecha, para que la obtenga del servidor.

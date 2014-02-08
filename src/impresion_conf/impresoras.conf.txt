@@ -1,0 +1,11 @@
+# /dev/lp0
+# /dev/ttyS1
+sincajon
+credito cups  miniprinter   localhost
+contado cups miniprinter localhost
+factura paralelo 0
+corte_caja cups  miniprinter   localhost
+credito_abono cups  miniprinter  localhost 
+corte_all_caja cups miniprinter localhost 
+pedidos_paso1 cups miniprinter localhost
+default serial 0
