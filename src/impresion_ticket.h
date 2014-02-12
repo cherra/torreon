@@ -2274,8 +2274,15 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 				Err_Info ("Error de impresion");
 			}
 		}else if((strcmp(tipo,"contado") == 0) ){
-			if(int_reimpresion != 1)
-				abrir_cajon(impresora_contado);
+			if(int_reimpresion != 1){
+                            //abrir_cajon(impresora_contado);
+                            abrir_cajon("/tmp/abrir_cajon.txt");
+                            if (manda_imprimir ("/tmp/abrir_cajon.txt","contado") != 0)
+                            {
+                                    Err_Info ("Error de impresión para abrir el cajón.");
+                                    printf("ERROR\n");
+                            }
+                        }
 			if (manda_imprimir (TicketImpresion,"contado") != 0)
 			{
 				Err_Info ("Error de impresion");
@@ -3410,7 +3417,11 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 							}
 							//system(cad_temporal);
 							//ABRE CAJON DE DINERO
-							abrir_cajon(impresora_contado);
+							abrir_cajon("/tmp/abrir_cajon.txt");
+                                                        if (manda_imprimir ("/tmp/abrir_cajon.txt","corte_caja") != 0) 
+							{
+								Err_Info ("Error de impresion al abrir el cajon");
+							}
 							if (manda_imprimir (TicketImpresion,"corte_caja") != 0) 
 							{
 								Err_Info ("Error de impresion");
