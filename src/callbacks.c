@@ -2912,7 +2912,7 @@ on_caja_show                           (GtkCList       *listaclientes,
 	char nombre [] = "modulo de modificacion de clientes";
 	char nombre_modulo [] = "modifica_cliente";
 	
-	if ( g_module_supported () )
+	/*if ( g_module_supported () )
 	{
 		printf ("### Soporte para librerias dinamicas. ###\n");
 		
@@ -2924,8 +2924,8 @@ on_caja_show                           (GtkCList       *listaclientes,
 		else
 		{
 			g_module_symbol(modulo_clientes,"create_Modificar_cliente", (gpointer *)&funcion);
-		}*/
-	}
+		}
+	}*/
 	
 	
 	caja = user_data;
@@ -3654,7 +3654,7 @@ on_caja_delete_event                   (GtkWidget       *widget,
                                         GdkEvent        *event,
                                         gpointer         user_data)
 {
-	g_module_close(modulo_clientes);
+	//g_module_close(modulo_clientes);
 	fin_de_sesion();
 	return FALSE;
 }
@@ -4101,6 +4101,7 @@ on_Confirmar_venta_show                (GtkLabel       *lblcambio,
 {
 //  GdkColor azul = { 0, 50000, 30000, 49 };
 	GtkWidget *radiobtncajapcredito;
+        GtkWidget *radiobtntiposalida;
 	GtkWidget *btnconfirmaraceptar;
 	GtkWidget *entryconfirma_vendedor;
 	GtkWidget *entry_Efectivo;
@@ -4113,15 +4114,16 @@ on_Confirmar_venta_show                (GtkLabel       *lblcambio,
 	gtk_label_set_markup (GTK_LABEL (lblcambio), marca);
 	btnconfirmaraceptar = lookup_widget(GTK_WIDGET(lblcambio), "btnconfirmaraceptar");
 	radiobtncajapcredito = lookup_widget(caja, "radiobtncajapcredito");
+        radiobtntiposalida = lookup_widget(caja, "radiobtntiposalida");
 	entryconfirma_vendedor = lookup_widget(GTK_WIDGET(lblcambio), "entryconfirma_vendedor");
 	entry_Efectivo = lookup_widget(GTK_WIDGET(lblcambio), "entry_Efectivo");
 	
 	//
 	gtk_entry_set_text(GTK_ENTRY(entryconfirma_vendedor),num_vendedor);
 
-	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncajapcredito)) == TRUE)
+	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncajapcredito)) == TRUE || gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtntiposalida)) == TRUE)
 	{
-		gtk_widget_grab_focus(btnconfirmaraceptar);
+		gtk_widget_grab_focus(entryconfirma_vendedor);
 		gtk_widget_set_sensitive(entry_Efectivo, FALSE);
 	}
 	else
@@ -4178,6 +4180,8 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 	GtkWidget *Confirmar_venta;
 	GtkWidget *entryconfirma_vendedor;
 	GtkWidget *btnconfirmarcancelar;
+        GtkWidget *radiobtntiposalida;
+        GtkWidget *radiobtntipoventa;
 
 	//GtkWidget *listaclientes;
 
@@ -4209,6 +4213,7 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 	char id_de_venta[20];
 	char forma_pago[10]="";
 	char formato[10]="";
+        char tipo[10]="";
 	char markup[100];
 
 	dato = fila;
@@ -4233,6 +4238,8 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 	Confirmar_venta = lookup_widget(GTK_WIDGET(button), "Confirmar_venta");
 	entryconfirma_vendedor = lookup_widget(GTK_WIDGET(button), "entryconfirma_vendedor");
 	btnconfirmarcancelar = lookup_widget(GTK_WIDGET(button), "btnconfirmarcancelar");
+        radiobtntiposalida = lookup_widget(caja, "radiobtntiposalida");
+        radiobtntipoventa = lookup_widget(caja, "radiobtntipoventa");
 	//listaclientes = lookup_widget(caja, "listaclientes");
 
 	if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncaja)) == TRUE)
@@ -4244,6 +4251,11 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 		strcpy(forma_pago, "contado");
 	else
 		strcpy(forma_pago, "credito");
+        
+        if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtntipoventa)) == TRUE)
+		strcpy(tipo, "Venta");
+	else
+                strcpy(tipo, "Salida");
 
 	if(efectivo_venta)
 	{
@@ -4270,7 +4282,7 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 		printf("IVA: %s\n", iva);
 	}
 
-	sprintf(sqlregistraventa, "INSERT INTO Venta (id_venta, fecha, hora, monto, subtotal, iva, id_usuario, id_cliente, tipo, id_caja, descuento, id_empleado) VALUES(NULL, %s, '%s', %s, %s, %s, %s, %s, '%s', %s, %.2f, %s)", fecha, hora, monto, subtotal, iva, id_sesion_usuario, codigo_cliente, forma_pago, id_sesion_caja, total_descuento, id_empleado);
+	sprintf(sqlregistraventa, "INSERT INTO %s (id_venta, fecha, hora, monto, subtotal, iva, id_usuario, id_cliente, tipo, id_caja, descuento, id_empleado) VALUES(NULL, %s, '%s', %s, %s, %s, %s, %s, '%s', %s, %.2f, %s)", tipo, fecha, hora, monto, subtotal, iva, id_sesion_usuario, codigo_cliente, forma_pago, id_sesion_caja, total_descuento, id_empleado);
 	printf("Registra Venta: %s\n", sqlregistraventa);
 
 	/*strcat(sqlfactura, fecha);
@@ -4281,7 +4293,7 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 	printf("La fecha es: %s\nLa Hora: %s\n", fecha, hora);
 	printf("La sentencia SQL: %s\n", sqlregistraventa);
 
-	if((total_venta > 0)&&(cliente_credito==1)&&vendedorbien==TRUE)
+	if((total_venta > 0)&&(cliente_credito==1) && vendedorbien==TRUE)
 	{
 		if (conecta_bd() == -1)
     		{
@@ -4298,7 +4310,7 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 				printf("Numero de la venta: %ld\n", id_de_la_venta);
 				for(i=0; i<= num_articulos_venta; i++)
 				{
-					sprintf(sqlregistraarticulo,"INSERT INTO Venta_Articulo (id_venta_articulo, id_venta, id_articulo, cantidad, id_bascula, precio, monto, subtotal, iva) VALUES(NULL, %ld, ", id_de_la_venta);
+					sprintf(sqlregistraarticulo,"INSERT INTO %s_Articulo (id_venta_articulo, id_venta, id_articulo, cantidad, id_bascula, precio, monto, subtotal, iva) VALUES(NULL, %ld, ", tipo, id_de_la_venta);
 					gtk_clist_get_text(GTK_CLIST(lista_articulos_venta), i, 0, &dato);
 					strcat(sqlregistraarticulo, dato);
 					strcat(sqlregistraarticulo, ",");
@@ -4370,7 +4382,7 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 				total_descuento = 0;
 
 				/*** SI LA VENTA ES DE CREDITO ***/
-				if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncajapcredito)) == TRUE)
+				if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncajapcredito)) == TRUE && gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtntipoventa)) == TRUE)
 				{
 					printf("\n\nVenta de Credito\n\n Id Venta: %ld\n",id_de_la_venta);
 					sprintf(sqlcliente, "SELECT vencimiento FROM Cliente WHERE id_cliente = %s AND vencimiento > 0", codigo_cliente);
@@ -4407,34 +4419,36 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 				}
 
 				/*** SE GUARDAN LAS COMISIONES **/
-				sprintf(sqlporcentaje, "SELECT id_empleado, porcentaje FROM Comision WHERE id_cliente = %s", codigo_cliente);
-				er = mysql_query(&mysql, sqlporcentaje);
-				if(er == 0)
-				{
-					res = mysql_store_result(&mysql);
-					if(res)
-					{
-						if(mysql_num_rows(res) > 0)
-						{
-							if((row = mysql_fetch_row(res)))
-							{
-								sprintf(sqlcomision, "INSERT INTO Comisiones VALUES(NULL, %s, %ld, %s, %.2f, 'n')", row[0], id_de_la_venta, fecha, atof(monto)*(atof(row[1])/100));
-								er = mysql_query(&mysql, sqlcomision);
-								if(er == 0)
-									printf("Se registrÃ³ la comisiÃ³n...\n");
-								else
-									printf("Error al registrar la comisiÃ³n: %s\n", mysql_error(&mysql));
-							}
-						}
-						else
-							printf("No hay comisiones... \n");
-						mysql_free_result(res);
-					}
-					else
-						printf("Error: %s\n", mysql_error(&mysql));
-				}
-				else
-					printf("Error: %s\n", mysql_error(&mysql));
+                                if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtntipoventa)) == TRUE){
+                                    sprintf(sqlporcentaje, "SELECT id_empleado, porcentaje FROM Comision WHERE id_cliente = %s", codigo_cliente);
+                                    er = mysql_query(&mysql, sqlporcentaje);
+                                    if(er == 0)
+                                    {
+                                            res = mysql_store_result(&mysql);
+                                            if(res)
+                                            {
+                                                    if(mysql_num_rows(res) > 0)
+                                                    {
+                                                            if((row = mysql_fetch_row(res)))
+                                                            {
+                                                                    sprintf(sqlcomision, "INSERT INTO Comisiones VALUES(NULL, %s, %ld, %s, %.2f, 'n')", row[0], id_de_la_venta, fecha, atof(monto)*(atof(row[1])/100));
+                                                                    er = mysql_query(&mysql, sqlcomision);
+                                                                    if(er == 0)
+                                                                            printf("Se registrÃ³ la comisiÃ³n...\n");
+                                                                    else
+                                                                            printf("Error al registrar la comisiÃ³n: %s\n", mysql_error(&mysql));
+                                                            }
+                                                    }
+                                                    else
+                                                            printf("No hay comisiones... \n");
+                                                    mysql_free_result(res);
+                                            }
+                                            else
+                                                    printf("Error: %s\n", mysql_error(&mysql));
+                                    }
+                                    else
+                                            printf("Error: %s\n", mysql_error(&mysql));
+                                }
 				
 				printf("El ID del pedido=%d\n",id_pedido);
 				if(id_pedido > 0)
@@ -4455,12 +4469,16 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 
 		mysql_close (&mysql);
 
-		printf("Hasta aquÃ­ si...\n");
 		sprintf(id_de_venta,"%ld",id_de_la_venta);
-		if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncajap)) == TRUE)
-			imprimirticket(id_de_venta, forma_pago, atof(efectivo_venta));
-		else
-			imprimirticket(id_de_venta, forma_pago, 0.00);
+                if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtntiposalida)) == TRUE){
+                    printf("Salida con ID: %ld\n", id_de_la_venta);
+                    imprimirticket(id_de_venta, "salida", 0.00);
+                }
+		else if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncajap)) == TRUE){
+                    imprimirticket(id_de_venta, forma_pago, atof(efectivo_venta));
+		}else{
+                    imprimirticket(id_de_venta, forma_pago, 0.00);
+                }
 
 		if(gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(radiobtncajafactura)) == TRUE)
 			gtk_widget_show(create_dialog_facturar());
@@ -4485,10 +4503,11 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 			ya_se_marco[i]=0;
 
 		timer = g_timer_new();
-		printf("Hasta aqui si...\n");
 
 		gtk_entry_set_text(GTK_ENTRY(txtbuscarcliente), "");
 		gtk_signal_emit_by_name(GTK_OBJECT(txtbuscarcliente), "activate");
+                gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(radiobtntipoventa), TRUE);
+                
 		/*gtk_widget_hide(lblconfirma_efectivo);
 		gtk_widget_hide(lblconfirma_cambio);
 		gtk_widget_hide(entry_Efectivo);
@@ -4508,6 +4527,26 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
 		gtk_widget_grab_focus(GTK_WIDGET(entryconfirma_vendedor));
 		Err_Info("Es necesario el número de vendedor");
 	}
+}
+
+void
+on_radiobtntipoventa_toggled    (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+    GtkWidget *txtbarcode;
+    
+    txtbarcode = lookup_widget(GTK_WIDGET(togglebutton), "txtbarcode");
+    gtk_widget_grab_focus(GTK_WIDGET(txtbarcode));
+}
+
+void
+on_radiobtntiposalida_toggled    (GtkToggleButton *togglebutton,
+                                        gpointer         user_data)
+{
+    GtkWidget *txtbarcode;
+    
+    txtbarcode = lookup_widget(GTK_WIDGET(togglebutton), "txtbarcode");
+    gtk_widget_grab_focus(GTK_WIDGET(txtbarcode));
 }
 
 

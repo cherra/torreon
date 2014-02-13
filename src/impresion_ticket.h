@@ -826,6 +826,63 @@ void cortarletras(char c[255], int total){
 	strcpy(c,cTMP);
 }
 
+/* EL CODIGO DEBE VENIR EN 12 CARACTERES*/
+void genera_codigo_barras(char destino[18], char destino_num[30], char fuente[13])
+{
+	int i,j,k;
+	int sumaImpar=0;
+	int sumaPar=0;
+	int digito=0;
+	char digitoControlchar[2];
+
+	/* Calculo del dígito de control*/	
+	printf("Longitud de la cadena: %d\n",strlen(fuente));
+	for(i = strlen(fuente); i >= 1; i--)
+	{
+		digito = (int)(fuente[i-1]);
+		digito -= 48;
+		if(i%2 != 0)
+		{
+			sumaPar += digito;
+			printf("Se suma el digito en posicion impar: %d\n", digito);
+		}
+		else
+		{
+			sumaImpar += digito;
+			printf("Se suma el digito en posicion par: %d\n", digito);
+		}
+	}
+	digito = (sumaImpar*3) + sumaPar;
+	
+	int digitoControl = (10 - (digito % 10) ) % 10;
+	sprintf(digitoControlchar,"%d\0",digitoControl);
+
+	for(i=0;i<18;i++)
+		destino[i]='\0';
+	j=0;
+	k=0;
+	for(i=0;i<14;i++)
+	{
+		for(j=0;j<2;j++)
+		{
+			if(j % 2 == 0)
+				destino_num[k]=fuente[i];
+			else
+				destino_num[k]=' ';
+			k++;
+		}
+	}
+	strcat(destino_num,digitoControlchar);
+
+	destino[0]=29;
+	destino[1]=107;
+	destino[2]=67;	/* 2 = EAN13 */
+	destino[3]=13;  
+
+	strcat(destino, fuente);
+	strcat(destino, digitoControlchar);
+}
+
 int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	int id_venta_num;
 	va_list lst_param;
@@ -845,10 +902,11 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	char temp[10] = "       ";
 	char temp2[40] = "        ";
 	char temp3[40] = "                                        ";
-	char sql[1000], monto[10];
+	char sql[1500], monto[10], sql_articulos[1500];
 	char id_venta[20], cambio[10], kilos_bascula[10], pago[10], num_articulos[300], peso[300], pieza[300], totales[20], total_cierre_listado[40];
 	char fechaTMP[10]; //Variable Temporal para separar las fechas
 	char vendedor[80];
+        char codigo_barras[18], codigo_barras_num[30];
 
 	char cadconf[5];
 	int err; //Variable de error de la consulta SQL
@@ -970,8 +1028,9 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	static char defecto[4],cancela[4];
 	static char subraya_s[4],negrita_grande[4],negrita_subraya[4],negrita_subraya1[4],negrita[4],negrita1[4],subraya_s1[4];
 	static char alinea_d[4],alinea_i[4],alinea_c[4];
-	static char tamano16[4],tamano1[4];
+	static char tamano16[4],tamano1[4], tamano2[4];
 	static char resetea[3],corta_papel[3];
+        static char altura_codigo_barras[4];
 //IMPRESORA LX300 ESC/P2
 	static char psalto[2], pcarro[2], psig_pag[2], psalto_l[3];
 	static char pt_pagina[4], pmargen_a[4];
@@ -1061,6 +1120,11 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	tamano1[1] = 33;
 	tamano1[2] = 1;
 	tamano1[3] = '\0';
+        
+        tamano2[0] = 27;
+	tamano2[1] = 33;
+	tamano2[2] = 4;
+	tamano2[3] = '\0';
 
 	salto[0]=27;
 	salto[1]=100;
@@ -1145,6 +1209,12 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	resetea[0]=27;
 	resetea[1]=64;
 	resetea[2]='\0';
+        
+        /* CODIGOS DE BARRAS*/
+	altura_codigo_barras[0]=29;
+	altura_codigo_barras[1]=104;
+	altura_codigo_barras[2]=81;
+	altura_codigo_barras[3]='\0';
 
 	nX = 40; //TamaÃ±o del ticket de largo
 
@@ -2455,6 +2525,482 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 		//system(cad_temporal);
 		}
 
+	}else if((strcmp(tipo, "salida") == 0)){ //Es salida de almacén
+		
+            fpt = fopen(TicketImpresion,"w");
+            if(fpt == NULL){
+                    printf("\nERROR no se puede abrir el archivo a imprimir");
+                    imprimiendo = FALSE;
+                    return (1);
+            }else{
+                imprimir(resetea,nX);
+                imprimir(defecto,nX);
+                imprimir(espaciado,nX);
+                imprimir(alinea_c,nX);
+                imprimir(negrita_grande,nX);
+                imprimir("CARNICERIA EL TORREON",nX);
+                imprimir(salto,nX);
+                imprimir(cancela,nX);
+                imprimir(tamano1,nX);
+                imprimir("SALIDA DE ALMACEN",nX);
+                imprimir(salto,nX);
+                imprimir(salto,nX);
+                imprimir(alinea_i,nX);
+                imprimir(espaciado, nX);
+                //Inserta la informaciï¿œn del ticket
+                if(conecta_bd() == -1){
+                        g_print("\nNo me puedo conectar a la base de datos\n");
+                        imprimiendo = FALSE;
+                        return (1);
+                }else{
+                    sprintf(sql,"SELECT Salida.id_venta, Salida.fecha, Salida.hora, FORMAT(Salida.monto,2), LEFT(CONCAT( Usuario.nombre,  ' ', Usuario.apellido ),27)  AS cajero, LEFT(Cliente.nombre,38) AS cliente, Cliente.domicilio, Cliente.colonia, Cliente.entre_calles, Cliente.id_cliente, Cliente.ciudad_estado, FORMAT(%f - Salida.monto,2), LEFT(CONCAT( Empleado.nombre, ' ', Empleado.apellido),27) FROM Salida, Usuario, Cliente, Empleado WHERE Usuario.id_usuario = Salida.id_usuario AND Cliente.id_cliente = Salida.id_cliente AND Empleado.id_empleado = Salida.id_empleado AND Salida.id_venta = %s GROUP BY Salida.id_venta", pago_num, id_venta);
+
+                    printf("%s\n", sql);
+                    err = mysql_query(&mysql, sql);
+
+                    if(err != 0){
+                        printf("Error al consultar la salida de almacén: %s\n", mysql_error(&mysql));
+                        imprimiendo = FALSE;
+                        return (1);
+                    }else{
+                        resultado = mysql_store_result(&mysql);
+                        if(resultado){
+                            if((row = mysql_fetch_row(resultado))){
+                                if (mysql_num_rows(resultado) > 0){
+                                    for(i=0; i < 13;i++) //Guarda todo el arreglo en listapos
+                                            listatipos[i] =  row[i];
+                                    sprintf(monto, "%s", listatipos[3]);
+                                    sprintf(cambio, "%s", listatipos[11]);
+
+                                    sprintf(c, "Fecha: %c%c/%c%c/%c%c%c%c       Hora: %s",listatipos[1][8],listatipos[1][9],listatipos[1][5],listatipos[1][6],listatipos[1][0],listatipos[1][1],listatipos[1][2],listatipos[1][3],listatipos[2]);
+                                    imprimir(c,nX);
+                                    imprimir(salto,nX);
+                                    sprintf(c, "Folio de salida: %s\n", listatipos[0]); imprimir(c,nX);
+                                    sprintf(c, "Cajero(a): %s", listatipos[4]);
+                                    imprimir(c,nX);
+                                    imprimir(salto,nX);
+                                    sprintf(c, "Atendio: %s", listatipos[12]);
+                                    imprimir(c,nX);
+                                    imprimir(salto,nX);
+                                    sprintf(c, "Cliente: %s\n",listatipos[9]);
+                                    imprimir(c,nX);
+                                    sprintf(c, "%s", listatipos[5]);
+                                    imprimir(c,nX);
+                                    imprimir(salto,nX);
+                                    if(strlen(listatipos[6]) != 0 ){ //Domicilio
+                                            sprintf(c, "%s\n", listatipos[6]);
+                                            imprimir(c,nX);
+                                    }
+                                    if(strlen(listatipos[7]) != 0 ){ //Colonia
+                                            sprintf(c, "%s\n", listatipos[7]);
+                                            imprimir(c,nX);
+                                    }
+                                    if(strlen(listatipos[10]) != 0 ){ //Ciudad Estado
+                                            sprintf(c, "%s\n", listatipos[10]); imprimir(c,nX);
+                                    }
+                                    if(strlen(listatipos[8]) != 0 ){ //Entre calles
+                                            sprintf(c, "Entre: %s\n", listatipos[8]); imprimir(c,nX);
+                                    }
+                                }else{
+                                        imprimiendo = FALSE;
+                                        return (1);
+                                }
+                            }else{
+                                    imprimiendo = FALSE;
+                                    return (1);
+                            }
+                        }else{
+                                imprimiendo = FALSE;
+                                return (1);
+                        }
+                    }
+                    //strcpy(c, "\n");
+                    //fputs(c,fpt);
+
+                    //se obtiene el ultimo parametro enviado a la funcion para saber si es un ticket reimpreso
+                    int_reimpresion =0;
+
+                    va_start(lst_param, pago_num);
+                    int_reimpresion = va_arg(lst_param,int); 
+                    va_end(lst_param);
+
+                    if ( int_reimpresion == 1 ) //SE IMPRIME LA LEYENDA DE REIMPRESION
+                    {
+                        imprimir(cancela,nX);
+                        imprimir(defecto,nX);
+                        imprimir(salto,nX);
+                        imprimir(alinea_c,nX);
+                        imprimir(negrita,nX);
+                        sprintf(c,"<<<<<<<<<< REIMPRESION >>>>>>>>>>");
+                        imprimir(c,nX);
+                        imprimir(salto,nX);
+                        imprimir(salto,nX);
+                    }
+
+                    sprintf(sql,"SELECT LEFT(Articulo.nombre,39), FORMAT(Salida_Articulo.cantidad,3), FORMAT(Salida_Articulo.precio,2), FORMAT(Salida_Articulo.monto,2), Articulo.tipo, Salida_Articulo.cantidad, Articulo.codigo, CONCAT('9',LPAD(Articulo.codigo,4,'000'), LPAD(TRUNCATE(Salida_Articulo.cantidad,0),3,'000'), RPAD(TRUNCATE(MOD(Salida_Articulo.cantidad,1)*100,0),2,'00'),RIGHT(Salida.id_empleado,2)) FROM Salida, Salida_Articulo, Articulo WHERE Articulo.id_articulo = Salida_Articulo.id_articulo AND Salida.id_venta = Salida_Articulo.id_venta AND Salida.id_venta = %s", id_venta);
+                    strcpy(sql_articulos,sql); // Se copia el SQL a otra variable para poder reutilizarlo mas adelante.
+                    err = mysql_query(&mysql, sql);
+                    if(err != 0){
+                        printf("Error al consultar los tipos de documentos: %s\n", mysql_error(&mysql));
+                        imprimiendo = FALSE;
+                        return (1);
+                    }else{
+                        resultado = mysql_store_result(&mysql);
+                        if(resultado){
+                            if (mysql_num_rows(resultado) > 0){
+
+                                sprintf(c, "Articulo                       Cantidad");
+                                imprimir(subraya_s,nX);
+                                imprimir(c,nX);
+                                imprimir(cancela,nX);
+                                imprimir(defecto,nX);
+                                imprimir(salto,nX);
+                                peso_num = 0; //Se inicializa el peso o cantidad de cada articulo
+                                while((row = mysql_fetch_row(resultado))){
+                                    strcpy(c,"");
+
+                                    if(strcmp(row[4], "peso")==0)
+                                    {
+                                        num_articulos_int = num_articulos_int + 1;
+                                        strcpy(num_tmp,"kg");
+                                        peso_num = peso_num + atof(row[5]);
+                                    }
+                                    else
+                                    {
+                                        piezas_num = piezas_num + atof(row[5]);
+                                        num_articulos_int = num_articulos_int + 1;// + atof(row[5]);
+                                        strcpy(num_tmp,"  ");
+                                    }
+                                    //Nombre Producto
+                                    if(strlen(row[0]) > 30)
+                                    {
+                                        imprimir(alinea_i, nX);
+                                        sprintf(c, "%s%s", row[0],salto);
+                                    }
+                                    else
+                                    {
+                                        imprimir(alinea_d, nX);
+                                        sprintf(c, "%s", row[0]);
+                                        strncat(c, temp3, 31-strlen(row[0]));
+                                    }
+
+                                    imprimir(c,nX);
+                                    strcpy(c, "");
+
+                                    strcpy(cad_temporal, row[1]);
+                                    //Cantidad
+                                    if(strlen(row[0]) > 8)
+                                        sprintf(c, "%s%s%s", alinea_d,row[1],num_tmp);
+                                    else
+                                        sprintf(c, "%s%s", row[1],num_tmp);
+
+                                    imprimir(c,nX);
+                                    imprimir(salto,nX);
+                                }
+                            }else{
+                                imprimiendo = FALSE;
+                                return (1);
+                            }
+                        }else{
+                            imprimiendo = FALSE;
+                            return (1);
+                        }
+                    }
+                    sprintf(c, "                               --------");
+                    imprimir(c,nX);
+                    strcpy(temp2,"");
+                    strcpy(c,"");
+
+                    strcpy(temp2,"Articulos: ");
+                    strncat(c,temp3,18-strlen(temp2));
+                    strcat(c, temp2);
+                    sprintf(num_articulos, "%d", num_articulos_int);
+
+                    strncat(c,temp3,4-strlen(num_articulos));
+                    strcat(c,num_articulos );
+
+                    imprimir(c,nX);
+                    imprimir(salto,nX);
+
+                    strcpy(temp2,"");
+                    strcpy(c,"");
+                    imprimir(alinea_i, nX);
+                    strcpy(temp2,"Peso: ");
+                    strncat(c,temp3,18-strlen(temp2));
+                    strcat(c, temp2);
+
+                    sprintf(peso, "%.3fkg", peso_num);
+                    strncat(c,temp3,10-strlen(peso));
+                    strcat(c,peso );
+                    strcat(c, salto);
+                    imprimir(c,nX);
+
+
+                    strcpy(temp2,"");
+                    strcpy(c,"");
+                    imprimir(alinea_i, nX);
+                    strcpy(temp2,"Piezas: ");
+                    strncat(c,temp3,18-strlen(temp2));
+                    strcat(c, temp2);
+
+                    sprintf(pieza, "%.3f  ", piezas_num);
+                    strncat(c,temp3,10-strlen(pieza));
+                    strcat(c,pieza );
+                    strcat(c, salto);
+                    imprimir(c,nX);
+
+                    mysql_close(&mysql); //Cierra conexion SQL
+
+                    strcpy(c,"");
+                    imprimir(salto,nX);
+                }
+                //Fin de la insercion del ticket
+
+		imprimir(salto,nX);
+		imprimir(cancela,nX);
+		imprimir(defecto,nX);
+
+		//se obtiene el ultimo parametro enviado a la funcion para saber si es un ticket reimpreso
+		int_reimpresion =0;
+		
+		va_start(lst_param, pago_num);
+		int_reimpresion = va_arg(lst_param,int); 
+		va_end(lst_param);
+		
+		if ( int_reimpresion == 1 ) //SE IMPRIME LA LEYENDA DE REIMPRESION
+		{
+                    if(conecta_bd() == -1){
+                        g_print("\nNo me puedo conectar a la base de datos\n");
+                        imprimiendo = FALSE;
+                        return (1);
+                    }else{
+
+                        sprintf(sql,"SELECT DATE_FORMAT(CURDATE(),\"%%d/%%m/%%Y\"), CURTIME()");
+                        //printf ("######################## \n SQL = %s",sql);
+                        err = mysql_query(&mysql, sql);
+                        if(err == 0)
+                        {
+                            resultado = mysql_store_result(&mysql);
+                            if(resultado){
+                                strcpy(c,"");
+                                row = mysql_fetch_row(resultado);
+                                //fprintf (fpttemp,"Fecha de reimpresion : %s %s%s Hora de reimpresion: %s %s%s", row[0], salto, salto, row[1], salto,salto);
+                                sprintf(c,"------------------------------------");
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                sprintf(c,"Fecha y hora de reimpresion : ");
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                sprintf(c,"%s %s", row[0], row[1]);
+                                /*imprimir (row[0], nX);
+                                imprimir ("Hora de reimpresion : \n", nX);
+                                imprimir (row[1], nX);*/
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                sprintf(c,"------------------------------------");
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                            }
+                        }
+                        mysql_close(&mysql);
+                    }
+		}else{
+                    //Firmas para los Vales
+                    
+                    imprimir(cancela,nX);
+                    imprimir(defecto,nX);
+                    imprimir(salto,nX);
+                    imprimir(alinea_c,nX);
+                    sprintf(c,"Autoriza");
+                    imprimir(c,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    sprintf(c,"----------------------------------");
+                    imprimir(c,nX);
+                    imprimir(salto,nX);
+                    sprintf(c,"Nombre y Firma");
+                    imprimir(c,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    sprintf(c,"Recibe");
+                    imprimir(c,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    sprintf(c,"----------------------------------");
+                    imprimir(c,nX);
+                    imprimir(salto,nX);
+                    sprintf(c,"Nombre y Firma");
+                    imprimir(c,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                    imprimir(salto,nX);
+                }
+
+		imprimir(salto,nX);
+		imprimir(cancela,nX);
+		imprimir(defecto,nX);
+		imprimir(salto,nX);
+		imprimir(salto,nX);
+		imprimir(salto,nX);
+		imprimir(salto,nX);
+		imprimir(salto,nX);
+		imprimir(salto,nX);
+		imprimir(salto,nX);
+		imprimir(salto,nX);
+		printf("\n\n\n\n\n");
+
+                imprimir(corta_papel,nX);
+
+		imprimir(cancela,nX);
+		imprimir(defecto,nX);
+		imprimir(resetea,nX);
+                
+                // Códigos de barras
+                if(conecta_bd() == -1){
+                    g_print("\nNo me puedo conectar a la base de datos\n");
+                    imprimiendo = FALSE;
+                    return (1);
+                }
+                else
+                {
+                    err = mysql_query(&mysql, sql_articulos);
+                    if(err != 0){
+                        printf("Error al consultar los articulos para generar los codigos de barras: %s\n", mysql_error(&mysql));
+                        imprimiendo = FALSE;
+                        return (1);
+                    }else{
+                        resultado = mysql_store_result(&mysql);
+                        if(resultado){
+                            if (mysql_num_rows(resultado) > 0){
+                                /* Reiniciamos la impresora*/
+                                imprimir(resetea,nX);
+                                imprimir(alinea_c,nX);
+                                imprimir(negrita_grande,nX);
+                                imprimir("CODIGOS PARA INVENTARIO",nX);
+                                imprimir(salto,nX);
+                                imprimir(negrita,nX);
+                                imprimir("EL TORREON",nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+                                imprimir(cancela,nX);
+
+                                imprimir(tamano2,nX);
+                                imprimir(alinea_i,nX);
+                                //imprimir(espaciado, nX);
+
+                                sprintf(c, "Fecha: %c%c/%c%c/%c%c%c%c       Hora: %s",listatipos[1][8],listatipos[1][9],listatipos[1][5],listatipos[1][6],listatipos[1][0],listatipos[1][1],listatipos[1][2],listatipos[1][3],listatipos[2]);
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                sprintf(c, "Derivado de la salida: ");
+                                imprimir(c,nX);
+                                imprimir(negrita,nX);
+                                sprintf(c, "%s", listatipos[0]);
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                imprimir(cancela,nX);
+                                imprimir(tamano2,nX);
+                                imprimir(alinea_i,nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+
+                                sprintf(c,"");
+                                num_articulos_int = 0;
+                                peso_num = 0;
+                                while((row = mysql_fetch_row(resultado))){
+                                    strcpy(c,"");
+                                    strcpy(codigo_barras,"");
+                                    //strcpy(codigo_barras_cadena,"");
+                                    if(strcmp(row[4], "peso")==0)
+                                    {
+                                        num_articulos_int = num_articulos_int + 1;
+                                        strcpy(num_tmp,"kg");
+                                        peso_num = peso_num + atof(row[5]);
+                                    }
+                                    else
+                                    {
+                                        piezas_num = piezas_num + atof(row[5]);
+                                        num_articulos_int = num_articulos_int + 1;// + atof(row[5]);
+                                        strcpy(num_tmp,"  ");
+                                    }
+                                    imprimir(tamano2,nX);
+                                    sprintf(c,"%s  %.*s  %s%s",row[6],23,row[0],row[1],num_tmp);
+                                    imprimir(c,nX);
+                                    imprimir(salto,nX);
+                                    imprimir(tamano1,nX);
+                                    imprimir(altura_codigo_barras,nX);
+                                    //sprintf(codigo_barras_cadena,"%s%s
+                                    printf("\n\nEl codigo de barras: %s\n\n",row[7] );
+                                    genera_codigo_barras(codigo_barras, codigo_barras_num, row[7]);
+                                    //genera_codigo_barras(codigo_barras, codigo_barras_num, "823300410805");
+                                    imprimir(codigo_barras,nX);
+                                    imprimir(codigo_barras_num,nX);
+                                    imprimir(salto,nX);
+                                    imprimir(salto,nX);
+                                    imprimir(salto,nX);
+                                }
+                                imprimir(salto,nX);
+                                imprimir(tamano2,nX);
+                                sprintf(c,"Articulos: %d",num_articulos_int);
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                sprintf(c,"Total kilos: %.3fkg",peso_num);
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                sprintf(c,"Total piezas: %.3f",piezas_num);
+                                imprimir(c,nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+                                imprimir(salto,nX);
+
+                                imprimir(corta_papel,nX);
+                                imprimir(cancela,nX);
+                                imprimir(defecto,nX);
+                                imprimir(resetea,nX);
+                            }else{
+                                imprimiendo = FALSE;
+                                return (1);
+                            }
+                        }else{
+                            imprimiendo = FALSE;
+                            return (1);
+                        }
+                    }
+                }
+                
+		fclose(fpt);
+		printf("\n\n\nIMPRIMIENDO....\n");
+		//TICKET
+		
+                if((impresora_nombre[arr_impresora_contado][0]) == 2)
+                {
+                        strcpy(cad_temporal,"lp ");
+                        strcat(cad_temporal,impresora_contado);
+                        strcat(cad_temporal," ");
+                        strcat(cad_temporal,TicketImpresion);
+                }
+                else
+                {
+                        strcpy(cad_temporal,"cat ");
+                        strcat(cad_temporal,TicketImpresion);
+                        strcat(cad_temporal,"> ");
+                        strcat(cad_temporal,impresora_contado);
+                }
+
+                if (manda_imprimir (TicketImpresion,"contado") != 0)
+                {
+                    Err_Info ("Error de impresion");
+                }
+            }
+            printf("Termina la impresión... \n");
 	}
 	else if(strcmp(tipo, "corte_caja") == 0){ //Corte Caja
 

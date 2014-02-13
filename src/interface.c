@@ -60,6 +60,9 @@ create_caja (void)
   GtkWidget *radiobtncaja;
   GSList *radiobtncaja_group = NULL;
   GtkWidget *radiobtncajafactura;
+  GtkWidget *radiobtntipoventa;
+  GSList *radiobtntipo_group = NULL;
+  GtkWidget *radiobtntiposalida;
   GtkWidget *label1;
   GtkWidget *txtbarcode;
   GtkWidget *txttelefono;
@@ -232,8 +235,8 @@ create_caja (void)
   gtk_widget_add_accelerator (listaclientes, "grab_focus", accel_group,
                               GDK_C, GDK_CONTROL_MASK,
                               GTK_ACCEL_VISIBLE);
-  gtk_clist_set_column_width (GTK_CLIST (listaclientes), 0, 36);
-  gtk_clist_set_column_width (GTK_CLIST (listaclientes), 1, 80);
+  gtk_clist_set_column_width (GTK_CLIST (listaclientes), 0, 40);
+  gtk_clist_set_column_width (GTK_CLIST (listaclientes), 1, 76);
   gtk_clist_column_titles_show (GTK_CLIST (listaclientes));
 
   label6 = gtk_label_new (_("Clave"));
@@ -525,6 +528,29 @@ create_caja (void)
                     (GtkAttachOptions) (0),
                     (GtkAttachOptions) (0), 0, 0);
 
+  radiobtntipoventa = gtk_radio_button_new_with_mnemonic (NULL, _("Venta"));
+  gtk_widget_set_name (radiobtntipoventa, "radiobtntipoventa");
+  gtk_widget_show (radiobtntipoventa);
+  gtk_table_attach (GTK_TABLE (table2), radiobtntipoventa, 7, 8, 7, 8,
+                    (GtkAttachOptions) (0),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_widget_set_size_request (radiobtntipoventa, 80, 21);
+  gtk_button_set_relief (GTK_BUTTON (radiobtntipoventa), GTK_RELIEF_NONE);
+  gtk_radio_button_set_group (GTK_RADIO_BUTTON (radiobtntipoventa), radiobtntipo_group);
+  radiobtntipo_group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (radiobtntipoventa));
+  gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (radiobtntipoventa), TRUE);
+  
+  radiobtntiposalida = gtk_radio_button_new_with_mnemonic (NULL, _("Salida"));
+  gtk_widget_set_name (radiobtntiposalida, "radiobtntiposalida");
+  gtk_widget_show (radiobtntiposalida);
+  gtk_table_attach (GTK_TABLE (table2), radiobtntiposalida, 7, 8, 8, 9,
+                    (GtkAttachOptions) (0),
+                    (GtkAttachOptions) (0), 0, 0);
+  gtk_widget_set_size_request (radiobtntiposalida, 80, 21);
+  gtk_button_set_relief (GTK_BUTTON (radiobtntiposalida), GTK_RELIEF_NONE);
+  gtk_radio_button_set_group (GTK_RADIO_BUTTON (radiobtntiposalida), radiobtntipo_group);
+  radiobtntipo_group = gtk_radio_button_get_group (GTK_RADIO_BUTTON (radiobtntiposalida));
+  
   btncajacancelar = gtk_button_new ();
   gtk_widget_set_name (btncajacancelar, "btncajacancelar");
   gtk_widget_show (btncajacancelar);
@@ -993,6 +1019,12 @@ create_caja (void)
   g_signal_connect_swapped ((gpointer) radiobtncaja, "toggled",
                             G_CALLBACK (gtk_widget_grab_focus),
                             GTK_OBJECT (txtbarcode));
+  g_signal_connect ((gpointer) radiobtntipoventa, "toggled",
+                    G_CALLBACK (on_radiobtntipoventa_toggled),
+                    NULL);
+  g_signal_connect ((gpointer) radiobtntiposalida, "toggled",
+                    G_CALLBACK (on_radiobtntiposalida_toggled),
+                    NULL);
   g_signal_connect ((gpointer) radiobtncajafactura, "toggled",
                     G_CALLBACK (on_radiobtncajafactura_toggled),
                     NULL);
@@ -1231,6 +1263,8 @@ create_caja (void)
   GLADE_HOOKUP_OBJECT (caja, ayuda_menu, "ayuda_menu");
   GLADE_HOOKUP_OBJECT (caja, acerca_de, "acerca_de");
   GLADE_HOOKUP_OBJECT_NO_REF (caja, tooltips, "tooltips");
+  GLADE_HOOKUP_OBJECT (caja, radiobtntiposalida, "radiobtntiposalida");
+  GLADE_HOOKUP_OBJECT (caja, radiobtntipoventa, "radiobtntipoventa");
 
   gtk_window_add_accel_group (GTK_WINDOW (caja), accel_group);
 

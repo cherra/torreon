@@ -607,6 +607,14 @@ on_btnconfirmaraceptar_clicked         (GtkButton       *button,
                                         gpointer         user_data);
 
 void
+on_radiobtntipoventa_toggled    (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
+on_radiobtntiposalida_toggled    (GtkToggleButton *togglebutton,
+                                        gpointer         user_data);
+
+void
 on_entry_Efectivo_change               (GtkLabel     *lblcambio,
                                         gpointer         entry_Efectivo);
 

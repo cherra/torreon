@@ -1,5 +1,5 @@
-ip 192.168.1.1
-usuario torreon
-contrasena torreon
-bd Mayoreo_pruebas
-caja caja3
+ip localhost
+usuario cherra
+contrasena cherra3003
+bd Torreon
+caja caja1
