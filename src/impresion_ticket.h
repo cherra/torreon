@@ -2569,8 +2569,8 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
                                 if (mysql_num_rows(resultado) > 0){
                                     for(i=0; i < 13;i++) //Guarda todo el arreglo en listapos
                                             listatipos[i] =  row[i];
-                                    sprintf(monto, "%s", listatipos[3]);
-                                    sprintf(cambio, "%s", listatipos[11]);
+                                    //sprintf(monto, "%s", listatipos[3]);
+                                    //sprintf(cambio, "%s", listatipos[11]);
 
                                     sprintf(c, "Fecha: %c%c/%c%c/%c%c%c%c       Hora: %s",listatipos[1][8],listatipos[1][9],listatipos[1][5],listatipos[1][6],listatipos[1][0],listatipos[1][1],listatipos[1][2],listatipos[1][3],listatipos[2]);
                                     imprimir(c,nX);
@@ -2649,7 +2649,7 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
                         if(resultado){
                             if (mysql_num_rows(resultado) > 0){
 
-                                sprintf(c, "Articulo                       Cantidad");
+                                sprintf(c, "Articulo               Codigo  Cantidad");
                                 imprimir(subraya_s,nX);
                                 imprimir(c,nX);
                                 imprimir(cancela,nX);
@@ -2672,7 +2672,7 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
                                         strcpy(num_tmp,"  ");
                                     }
                                     //Nombre Producto
-                                    if(strlen(row[0]) > 30)
+                                    if(strlen(row[0]) > 23)
                                     {
                                         imprimir(alinea_i, nX);
                                         sprintf(c, "%s%s", row[0],salto);
@@ -2681,15 +2681,24 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
                                     {
                                         imprimir(alinea_d, nX);
                                         sprintf(c, "%s", row[0]);
-                                        strncat(c, temp3, 31-strlen(row[0]));
+                                        strncat(c, temp3, 24-strlen(row[0]));
                                     }
 
                                     imprimir(c,nX);
                                     strcpy(c, "");
 
+                                    //Código
+                                    if(strlen(row[0]) > 23)
+                                        sprintf(c, "%s%s", alinea_d,row[6]);
+                                    else
+                                        sprintf(c, "%s", row[6]);
+                                    strncat(c, temp3, 16-strlen(row[6])-strlen(row[1]));
+                                    imprimir(c,nX);
+                                    strcpy(c, "");
+                                    
                                     strcpy(cad_temporal, row[1]);
                                     //Cantidad
-                                    if(strlen(row[0]) > 8)
+                                    if(strlen(row[0]) > 23)
                                         sprintf(c, "%s%s%s", alinea_d,row[1],num_tmp);
                                     else
                                         sprintf(c, "%s%s", row[1],num_tmp);
@@ -2896,7 +2905,7 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
                                 sprintf(c, "Fecha: %c%c/%c%c/%c%c%c%c       Hora: %s",listatipos[1][8],listatipos[1][9],listatipos[1][5],listatipos[1][6],listatipos[1][0],listatipos[1][1],listatipos[1][2],listatipos[1][3],listatipos[2]);
                                 imprimir(c,nX);
                                 imprimir(salto,nX);
-                                sprintf(c, "Derivado de la salida: ");
+                                sprintf(c, "Folio de salida: ");
                                 imprimir(c,nX);
                                 imprimir(negrita,nX);
                                 sprintf(c, "%s", listatipos[0]);
