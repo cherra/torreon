@@ -903,7 +903,7 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	char temp2[40] = "        ";
 	char temp3[40] = "                                        ";
 	char sql[1500], monto[10], sql_articulos[1500];
-	char id_venta[20], cambio[10], kilos_bascula[10], pago[10], num_articulos[300], peso[300], pieza[300], totales[20], total_cierre_listado[40];
+	char id_venta[20], cambio[15], kilos_bascula[10], pago[10], num_articulos[300], peso[300], pieza[300], totales[20], total_cierre_listado[40];
 	char fechaTMP[10]; //Variable Temporal para separar las fechas
 	char vendedor[80];
         char codigo_barras[18], codigo_barras_num[30];
@@ -3186,8 +3186,8 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 										return (1);
 									}
 								}
-
-
+                                                                
+                                                                
 								//FACTURAS ya sea de credito o contado
 								sprintf(sql,"SELECT Venta.tipo, FORMAT(SUM(Venta.monto),2) AS Monto_IVA, FORMAT((SUM(Venta.monto)  / 1.15),2) AS Monto, SUM(Venta.monto) FROM Corte_Caja INNER JOIN Venta ON Corte_Caja.id_caja = Venta.id_caja WHERE Venta.id_venta BETWEEN Corte_Caja.id_venta_inicio AND Corte_Caja.id_venta_fin AND Venta.cancelada = 'n' AND Venta.num_factura <> 0 AND Corte_Caja.id_corte_caja = %s GROUP BY Venta.tipo", id_venta);
 								printf("\n%s\n",sql);
@@ -3609,6 +3609,71 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 									return (1);
 								}
 							}
+                                                        
+                                                        //Salidas de almacén
+                                                        sprintf(sql,"SELECT Articulo.tipo, FORMAT(SUM( Salida_Articulo.cantidad ),2) FROM Corte_Caja INNER JOIN Salida ON Corte_Caja.id_caja=Salida.id_caja INNER JOIN Salida_Articulo ON Salida.id_venta=Salida_Articulo.id_venta INNER JOIN Articulo ON Salida_Articulo.id_articulo=Articulo.id_articulo WHERE Salida.id_venta BETWEEN Corte_Caja.id_salida_inicio AND Corte_Caja.id_salida_fin AND Salida.cancelada =  'n' AND Corte_Caja.id_corte_caja = %s GROUP BY Articulo.tipo", id_venta);
+                                                        //printf("\n%s",sql);
+                                                        if((err = mysql_query(&mysql, sql)) != 0){
+                                                                printf("Error al consultar los tipos de documentos de Salida Total: %s\n", mysql_error(&mysql));
+                                                                imprimiendo = FALSE;
+                                                                return (1);
+                                                        }
+                                                        else{
+                                                                if((resultado = mysql_store_result(&mysql))){
+                                                                        fac_subtotal_num = 0;
+                                                                        fac_iva_num = 0;
+                                                                        fac_total_num = 0;
+                                                                        bandera = 0;
+                                                                        cambio_num_total = 0;
+                                                                        fac_cred_total_venta = 0;
+                                                                        fac_cont_total_venta = 0;
+                                                                        if (mysql_num_rows(resultado) > 0){
+                                                                                imprimir(negrita1,nX);
+                                                                                sprintf(c, "SALIDAS DE ALMACEN:");
+                                                                                imprimir(c,nX);
+                                                                                imprimir(salto,nX);
+                                                                                imprimir(defecto,nX);
+                                                                                while((row = mysql_fetch_row(resultado)))
+                                                                                {
+                                                                                        for(i=0; i < 2;i++) //Guarda todo el arreglo en listapos
+                                                                                                listatipos[i] =  row[i];
+                                                                                        bandera ++;
+                                                                                        //Es peso o pieza
+                                                                                        if(strcmp(listatipos[0], "peso") == 0)
+                                                                                        {
+                                                                                                strcpy(totales, listatipos[1]);
+                                                                                                //printf("\n\nEl total de la venta: %.2s\n\n", lista);
+                                                                                                strcpy(temp2,"");
+                                                                                                strcpy(c,"");
+                                                                                                strcpy(temp2,"Kilos: ");
+                                                                                                strncat(c,temp3,23-strlen(temp2));
+                                                                                                strcat(c, temp2);
+                                                                                                strncat(c,temp3,11-strlen(totales));
+                                                                                                strcat(c, totales);
+                                                                                                imprimir(c,nX);
+                                                                                                imprimir(salto,nX);
+
+
+                                                                                        }else if(strcmp(listatipos[0], "pieza") == 0){
+                                                                                                strcpy(totales, listatipos[1]);
+                                                                                                strcpy(temp2,"");
+                                                                                                strcpy(c,"");
+                                                                                                strcpy(temp2,"Piezas: ");
+                                                                                                strncat(c,temp3,23-strlen(temp2));
+                                                                                                strcat(c, temp2);
+                                                                                                strncat(c,temp3,11-strlen(totales));
+                                                                                                strcat(c, totales);
+                                                                                                imprimir(c,nX);
+                                                                                                imprimir(salto,nX);
+                                                                                        }
+                                                                                }
+
+                                                                        }//Fin del > 0
+                                                                }else{
+                                                                        imprimiendo = FALSE;
+                                                                        return (1);
+                                                                }
+                                                        }
 
 							//Resumen de documentos
 							sprintf(sql,"SELECT Venta.id_venta, Venta.num_factura, FORMAT(Venta.monto,2) FROM Venta INNER JOIN Corte_Caja ON Venta.id_caja = Corte_Caja.id_caja WHERE Venta.tipo='credito' AND Venta.cancelada='n' AND Venta.id_venta BETWEEN Corte_Caja.id_venta_inicio AND Corte_Caja.id_venta_fin AND Corte_Caja.id_corte_caja=%s", id_venta);
@@ -3684,88 +3749,170 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 								imprimir(salto,nX);
 	                                                        imprimir(salto,nX);
         	                                                //imprimir(corta_papel,nX);
-							//Cantidad vendida de kilos
-							sprintf(sql,"SELECT Venta_Articulo.id_articulo, SUM( Venta_Articulo.monto ), (SUM( Venta_Articulo.monto )  / 1.15), SUM( Venta_Articulo.cantidad ), Articulo.nombre, Articulo.tipo AS tipo FROM Corte_Caja INNER JOIN Venta ON Corte_Caja.id_caja = Venta.id_caja INNER JOIN Venta_Articulo ON Venta_Articulo.id_venta = Venta.id_venta INNER JOIN Articulo ON Articulo.id_articulo = Venta_Articulo.id_articulo WHERE Venta_Articulo.id_venta BETWEEN Corte_Caja.id_venta_inicio AND Corte_Caja.id_venta_fin AND Venta.cancelada = 'n' AND Corte_Caja.id_corte_caja = %s GROUP  BY Venta_Articulo.id_articulo ORDER BY tipo,cantidad DESC", id_venta);
+                                                            //Cantidad vendida de kilos
+                                                            sprintf(sql,"SELECT Venta_Articulo.id_articulo, SUM( Venta_Articulo.monto ), (SUM( Venta_Articulo.monto )  / 1.15), SUM( Venta_Articulo.cantidad ), Articulo.nombre, Articulo.tipo AS tipo FROM Corte_Caja INNER JOIN Venta ON Corte_Caja.id_caja = Venta.id_caja INNER JOIN Venta_Articulo ON Venta_Articulo.id_venta = Venta.id_venta INNER JOIN Articulo ON Articulo.id_articulo = Venta_Articulo.id_articulo WHERE Venta_Articulo.id_venta BETWEEN Corte_Caja.id_venta_inicio AND Corte_Caja.id_venta_fin AND Venta.cancelada = 'n' AND Corte_Caja.id_corte_caja = %s GROUP  BY Venta_Articulo.id_articulo ORDER BY tipo,cantidad DESC", id_venta);
 
-							if((err = mysql_query(&mysql, sql)) != 0){
-								printf("Error al consultar los tipos de documentos: %s\n", mysql_error(&mysql));
-								imprimiendo = FALSE;
-								return (1);
-							}else{
-								if((resultado = mysql_store_result(&mysql))){
-									if (mysql_num_rows(resultado) > 0){
-	 									sprintf(c, "_________________");
-										imprimir(c,nX);
-										imprimir(salto,nX);
-										sprintf(c, "ARTICULOS VENDIDOS:");
-										imprimir(negrita1,nX);
-										imprimir(c,nX);
-										imprimir(salto,nX);
-										imprimir(defecto,nX);
-										sprintf(c, "Articulo                     Cantidad");
-										imprimir(c,nX);
-										imprimir(salto,nX);
-										sprintf(c, "----------                 ----------");
-										imprimir(c,nX);
-										imprimir(salto,nX);
-										corte_dinero_caja_num = 0;
-										while((row = mysql_fetch_row(resultado))){
-											for(i=0; i < 6;i++) //Guarda todo el arreglo en listapos
-												listatipos[i] =  row[i];
+                                                            if((err = mysql_query(&mysql, sql)) != 0){
+                                                                    printf("Error al consultar los tipos de documentos: %s\n", mysql_error(&mysql));
+                                                                    imprimiendo = FALSE;
+                                                                    return (1);
+                                                            }else{
+                                                                    if((resultado = mysql_store_result(&mysql))){
+                                                                            if (mysql_num_rows(resultado) > 0){
+                                                                                    sprintf(c, "_________________");
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    sprintf(c, "ARTICULOS VENDIDOS:");
+                                                                                    imprimir(negrita1,nX);
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    imprimir(defecto,nX);
+                                                                                    sprintf(c, "Articulo                     Cantidad");
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    sprintf(c, "----------                 ----------");
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    corte_dinero_caja_num = 0;
+                                                                                    while((row = mysql_fetch_row(resultado))){
+                                                                                            for(i=0; i < 6;i++) //Guarda todo el arreglo en listapos
+                                                                                                    listatipos[i] =  row[i];
 
-											fac_subtotal_num = atof(listatipos[3]);
-											if(strcmp(row[5], "peso")==0)
-											{
-												sprintf(cambio, "%.3f kg", fac_subtotal_num);
-												corte_peso = corte_peso + fac_subtotal_num;
-											}
-											else if(strcmp(row[5], "pieza")==0)
-											{
-												sprintf(cambio, "%.3f pz", fac_subtotal_num);
-												corte_articulos = corte_articulos + fac_subtotal_num;
-											}
+                                                                                            fac_subtotal_num = atof(listatipos[3]);
+                                                                                            if(strcmp(row[5], "peso")==0)
+                                                                                            {
+                                                                                                    sprintf(cambio, "%.3f kg", fac_subtotal_num);
+                                                                                                    corte_peso = corte_peso + fac_subtotal_num;
+                                                                                            }
+                                                                                            else if(strcmp(row[5], "pieza")==0)
+                                                                                            {
+                                                                                                    sprintf(cambio, "%.3f pz", fac_subtotal_num);
+                                                                                                    corte_articulos = corte_articulos + fac_subtotal_num;
+                                                                                            }
 
-											//corte_dinero_caja_num = corte_dinero_caja_num + atof(cambio);
-											strcpy(temp2,"");
-											strcpy(c,"");
-											for(i=0;i<25;i++){
-												if( i >=strlen(listatipos[4]))
-													temp2[i] = ' ';
-												else
-													temp2[i] = listatipos[4][i];
-												temp2[i+1] = '\0';
-											}
-											strcat(c, temp2);
-											strncat(c,temp3,12-strlen(cambio));
-											strcat(c, cambio);
-											imprimir(c,nX);
-											imprimir(salto,nX);
+                                                                                            //corte_dinero_caja_num = corte_dinero_caja_num + atof(cambio);
+                                                                                            strcpy(temp2,"");
+                                                                                            strcpy(c,"");
+                                                                                            for(i=0;i<25;i++){
+                                                                                                    if( i >=strlen(listatipos[4]))
+                                                                                                            temp2[i] = ' ';
+                                                                                                    else
+                                                                                                            temp2[i] = listatipos[4][i];
+                                                                                                    temp2[i+1] = '\0';
+                                                                                            }
+                                                                                            strcat(c, temp2);
+                                                                                            strncat(c,temp3,12-strlen(cambio));
+                                                                                            strcat(c, cambio);
+                                                                                            imprimir(c,nX);
+                                                                                            imprimir(salto,nX);
 
 
-										}
-										//Monto dle retiro
-										strcpy(cambio,"");
-										sprintf(cambio, "%.3f",corte_peso);
-										sprintf(c, "TOTAL KILOS:  %s",cambio);
-										imprimir(salto,nX);
-										imprimir(negrita1,nX);
-										imprimir(c,nX);
-										imprimir(salto,nX);
-										imprimir(defecto,nX);
-										strcpy(cambio,"");
-										sprintf(cambio, "%.2f",corte_articulos);
-										sprintf(c, "TOTAL PIEZAS: %s",cambio);
-										imprimir(c,nX);
-										imprimir(salto,nX);
-									}else{
-										//return (1);
-									}
-								}else{
-									imprimiendo = FALSE;
-									return (1);
-								}
-							}
-							imprimir(salto,nX);
+                                                                                    }
+                                                                                    //Monto dle retiro
+                                                                                    strcpy(cambio,"");
+                                                                                    sprintf(cambio, "%.3f",corte_peso);
+                                                                                    sprintf(c, "TOTAL KILOS:  %s",cambio);
+                                                                                    imprimir(salto,nX);
+                                                                                    imprimir(negrita1,nX);
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    imprimir(defecto,nX);
+                                                                                    strcpy(cambio,"");
+                                                                                    sprintf(cambio, "%.2f",corte_articulos);
+                                                                                    sprintf(c, "TOTAL PIEZAS: %s",cambio);
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                            }else{
+                                                                                    //return (1);
+                                                                            }
+                                                                    }else{
+                                                                            imprimiendo = FALSE;
+                                                                            return (1);
+                                                                    }
+                                                            }
+
+                                                            // Salidas por producto
+                                                            sprintf(sql,"SELECT Salida_Articulo.id_articulo, SUM( Salida_Articulo.cantidad ), Articulo.nombre, Articulo.tipo AS tipo FROM Corte_Caja INNER JOIN Salida ON Corte_Caja.id_caja = Salida.id_caja INNER JOIN Salida_Articulo ON Salida_Articulo.id_venta = Salida.id_venta INNER JOIN Articulo ON Articulo.id_articulo = Salida_Articulo.id_articulo WHERE Salida_Articulo.id_venta BETWEEN Corte_Caja.id_salida_inicio AND Corte_Caja.id_salida_fin AND Salida.cancelada = 'n' AND Corte_Caja.id_corte_caja = %s GROUP  BY Salida_Articulo.id_articulo ORDER BY tipo,cantidad DESC", id_venta);
+
+                                                            if((err = mysql_query(&mysql, sql)) != 0){
+                                                                    printf("Error al consultar los tipos de documentos: %s\n", mysql_error(&mysql));
+                                                                    imprimiendo = FALSE;
+                                                                    return (1);
+                                                            }else{
+                                                                    if((resultado = mysql_store_result(&mysql))){
+                                                                            if (mysql_num_rows(resultado) > 0){
+                                                                                    sprintf(c, "_________________");
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    sprintf(c, "ARTICULOS TRASPASADOS:");
+                                                                                    imprimir(negrita1,nX);
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    imprimir(defecto,nX);
+                                                                                    sprintf(c, "Articulo                     Cantidad");
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    sprintf(c, "----------                 ----------");
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    corte_dinero_caja_num = 0;
+                                                                                    while((row = mysql_fetch_row(resultado))){
+                                                                                            for(i=0; i < 3;i++) //Guarda todo el arreglo en listapos
+                                                                                                    listatipos[i] =  row[i];
+
+                                                                                            fac_subtotal_num = atof(listatipos[1]);
+                                                                                            if(strcmp(row[3], "peso")==0)
+                                                                                            {
+                                                                                                    sprintf(cambio, "%.3f kg", fac_subtotal_num);
+                                                                                                    corte_peso = corte_peso + fac_subtotal_num;
+                                                                                            }
+                                                                                            else if(strcmp(row[3], "pieza")==0)
+                                                                                            {
+                                                                                                    sprintf(cambio, "%.3f pz", fac_subtotal_num);
+                                                                                                    corte_articulos = corte_articulos + fac_subtotal_num;
+                                                                                            }
+
+                                                                                            //corte_dinero_caja_num = corte_dinero_caja_num + atof(cambio);
+                                                                                            strcpy(temp2,"");
+                                                                                            strcpy(c,"");
+                                                                                            for(i=0;i<25;i++){
+                                                                                                    if( i >=strlen(listatipos[2]))
+                                                                                                            temp2[i] = ' ';
+                                                                                                    else
+                                                                                                            temp2[i] = listatipos[2][i];
+                                                                                                    temp2[i+1] = '\0';
+                                                                                            }
+                                                                                            strcat(c, temp2);
+                                                                                            strncat(c,temp3,12-strlen(cambio));
+                                                                                            strcat(c, cambio);
+                                                                                            imprimir(c,nX);
+                                                                                            imprimir(salto,nX);
+
+
+                                                                                    }
+                                                                                    //Monto dle retiro
+                                                                                    strcpy(cambio,"");
+                                                                                    sprintf(cambio, "%.3f",corte_peso);
+                                                                                    sprintf(c, "TOTAL KILOS:  %s",cambio);
+                                                                                    imprimir(salto,nX);
+                                                                                    imprimir(negrita1,nX);
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                                    imprimir(defecto,nX);
+                                                                                    strcpy(cambio,"");
+                                                                                    sprintf(cambio, "%.2f",corte_articulos);
+                                                                                    sprintf(c, "TOTAL PIEZAS: %s",cambio);
+                                                                                    imprimir(c,nX);
+                                                                                    imprimir(salto,nX);
+                                                                            }else{
+                                                                                    //return (1);
+                                                                            }
+                                                                    }else{
+                                                                            imprimiendo = FALSE;
+                                                                            return (1);
+                                                                    }
+                                                            }
+                                                            imprimir(salto,nX);
 							}
 							
 							//SE OBTIENE LOS KILOS VENDIDOS POR BASCULA

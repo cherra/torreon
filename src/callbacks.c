@@ -4832,8 +4832,10 @@ void corte_caja()
 {
 	char sqlcorte[200];
 	char fecha[10], hora[11];
-	char sqlprimerav[200];
+	char sqlprimerav[250];
 	char sqlultimav[250];
+        char sqlprimeras[250];
+	char sqlultimas[250];
 	char sqlprimerr[250];
 	char sqlultimor[250];
 	char sqlprimerp[250];
@@ -4842,6 +4844,8 @@ void corte_caja()
 
 	int id_p_venta=0;
 	int id_u_venta=0;
+        int id_p_salida=0;
+	int id_u_salida=0;
 	int id_p_retiro=0;
 	int id_u_retiro=0;
 	int id_p_pedido=0;
@@ -4856,6 +4860,9 @@ void corte_caja()
 	sprintf(sqlultimor,  "SELECT id_retiro FROM Retiro WHERE id_usuario_cajero = %s AND id_caja = %s AND fecha = %s GROUP BY id_retiro DESC LIMIT 1", id_sesion_usuario, id_sesion_caja, fecha);
 	sprintf(sqlprimerp,  "SELECT id_pedido FROM Pedido WHERE id_usuario = %s AND id_caja = %s AND fecha = %s GROUP BY id_pedido LIMIT 1", id_sesion_usuario, id_sesion_caja, fecha);
 	sprintf(sqlultimop,  "SELECT id_pedido FROM Pedido WHERE id_usuario = %s AND id_caja = %s AND fecha = %s GROUP BY id_pedido DESC LIMIT 1", id_sesion_usuario, id_sesion_caja, fecha);
+        sprintf(sqlprimeras, "SELECT id_venta FROM Salida WHERE id_usuario = %s AND id_caja = %s AND fecha = %s GROUP BY id_venta LIMIT 1", id_sesion_usuario, id_sesion_caja, fecha);
+	sprintf(sqlultimas,  "SELECT id_venta FROM Salida WHERE id_usuario = %s AND id_caja = %s AND fecha = %s GROUP BY id_venta DESC LIMIT 1", id_sesion_usuario, id_sesion_caja, fecha);
+        
 
 /*	sprintf(sqlprimerav, "SELECT Venta.id_venta FROM Venta, Corte_Caja WHERE Venta.fecha = %s AND Venta.id_venta > Corte_Caja.id_venta_fin AND Venta.id_caja = %s AND Venta.id_usuario = %s GROUP BY id_venta LIMIT 1", fecha, id_sesion_caja, id_sesion_usuario);
 	sprintf(sqlultimav, "SELECT Venta.id_venta FROM Venta, Corte_Caja WHERE Venta.fecha = %s AND Venta.id_venta > Corte_Caja.id_venta_fin AND Venta.id_caja = %s AND Venta.id_usuario = %s GROUP BY id_venta DESC LIMIT 1", fecha, id_sesion_caja, id_sesion_usuario);
@@ -4903,6 +4910,41 @@ void corte_caja()
 			sprintf(Errores, "%s",mysql_error(&mysql2));
 			Err_Info(Errores);
 		}
+                
+                if(mysql_query(&mysql2, sqlprimeras) == 0)
+		{
+			res = mysql_store_result(&mysql2);
+			if(res)
+			{
+				printf("Se registra la salida inicial...\n");
+				if((row = mysql_fetch_row(res)))
+				{
+					id_p_salida = atoi(row[0]);
+
+					printf("El id: %d\n", id_p_salida);
+				}
+			}
+		}
+		else
+		{
+			sprintf(Errores, "%s",mysql_error(&mysql2));
+			Err_Info(Errores);
+		}
+		if(mysql_query(&mysql2, sqlultimas) == 0)
+		{
+			res = mysql_store_result(&mysql2);
+			if(res)
+			{
+				if((row = mysql_fetch_row(res)))
+					id_u_salida = atoi(row[0]);
+			}
+		}
+		else
+		{
+			sprintf(Errores, "%s",mysql_error(&mysql2));
+			Err_Info(Errores);
+		}
+                
 		if(mysql_query(&mysql2, sqlprimerr) == 0)
 		{
 			res = mysql_store_result(&mysql2);
@@ -4960,7 +5002,7 @@ void corte_caja()
 			Err_Info(Errores);
 		}
 
-		sprintf(sqlcorte, "INSERT INTO Corte_Caja VALUES(NULL, %s, %s, '%s', %d, %d, %d, %d, %d, %d, %s)", id_sesion_usuario, fecha, hora, id_p_venta, id_u_venta, id_p_retiro, id_u_retiro, id_p_pedido, id_u_pedido, id_sesion_caja);
+		sprintf(sqlcorte, "INSERT INTO Corte_Caja VALUES(NULL, %s, %s, '%s', %d, %d, %d, %d, %d, %d, %d, %d, %s)", id_sesion_usuario, fecha, hora, id_p_venta, id_u_venta, id_p_retiro, id_u_retiro, id_p_pedido, id_u_pedido, id_p_salida, id_u_salida, id_sesion_caja);
 		er = mysql_query(&mysql2, sqlcorte);
 		if(er == 0)
 		{
