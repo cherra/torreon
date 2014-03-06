@@ -1039,7 +1039,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	static char ptabulador[2];
 	static char pcpi15[3],pcpi12[3],pcpi10[3];
 	static char pcondensed[2], pc_condensed[2];
-	static char espaciado[4];
+	static char espaciado[4], espaciado_termica[4];
+        gboolean termica = FALSE;
 	
 	char servicio_formato[50];
 	float servicio;
@@ -1054,10 +1055,10 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	
 	id_venta_num = atoi (id_venta_char);
 	
-	espaciado[0]=27;
-	espaciado[1]=51;
-	espaciado[2]=19;
-	espaciado[3]='\0';
+//	espaciado[0]=27;
+//	espaciado[1]=51;
+//	espaciado[2]=19;
+//	espaciado[3]='\0';
 
 //ESC/P2
 	psalto[0]=10;
@@ -1154,6 +1155,11 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 	espaciado[1]=51;
 	espaciado[2]=20;
 	espaciado[3]='\0';
+        
+        espaciado_termica[0]=27;
+	espaciado_termica[1]=51;
+	espaciado_termica[2]=40;
+	espaciado_termica[3]='\0';
 
 	alinea_d[0]=27;
 	alinea_d[1]=97;
@@ -1270,6 +1276,7 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 							j=0;
 							if(k==0){
 								//Guarda la posicion de las variables.
+                                                            printf("El cadconf: %s\n", cadconf);
 								if(strcmp(cadconf,"credito") == 0) arr_impresora_credito = m;
 								else if(strcmp(cadconf,"contado") == 0) arr_impresora_contado = m;
 								else if(strcmp(cadconf,"factura") == 0) 	arr_impresora_factura = m;
@@ -1277,6 +1284,10 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 								else if(strcmp(cadconf,"credito_abono") == 0) arr_impresora_credito_abono = m;
 								else if(strcmp(cadconf,"corte_all_caja") == 0) arr_impresora_corte_all_caja = m;
 								else if(strcmp(cadconf,"pedidos_paso1") == 0) arr_impresora_pedidos_paso1 = m;
+                                                                else if(strcmp(cadconf,"termica") == 0){
+                                                                    printf("Impresora térmica\n"); 
+                                                                    termica = TRUE;
+                                                                }
 
 								//printf("->nombre %s\n<-",cadconf);
 							}else if(k==1){
@@ -1831,7 +1842,10 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 		}else{
 			imprimir(resetea,nX);
 			imprimir(defecto,nX);
-			imprimir(espaciado,nX);
+                        if(termica == TRUE)
+                            imprimir(espaciado_termica,nX);
+                        else
+                            imprimir(espaciado,nX);
 			imprimir(alinea_i, nX);
 			while(fgets(c, 255, fpt2) != NULL){
 				imprimir(c,nX);
@@ -1846,7 +1860,10 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 			imprimir(cancela,nX);
 			imprimir(tamano1,nX);
 			imprimir(alinea_i,nX);
-			imprimir(espaciado, nX);
+			if(termica == TRUE)
+                            imprimir(espaciado_termica,nX);
+                        else
+                            imprimir(espaciado,nX);
 			//Inserta la informaciï¿œn del ticket
 			if(conecta_bd() == -1){
 				g_print("\nNo me puedo conectar a la base de datos\n");
@@ -2535,7 +2552,10 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
             }else{
                 imprimir(resetea,nX);
                 imprimir(defecto,nX);
-                imprimir(espaciado,nX);
+                if(termica == TRUE)
+                    imprimir(espaciado_termica,nX);
+                else
+                    imprimir(espaciado,nX);
                 imprimir(alinea_c,nX);
                 imprimir(negrita_grande,nX);
                 imprimir("CARNICERIA EL TORREON",nX);
@@ -2546,7 +2566,10 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
                 imprimir(salto,nX);
                 imprimir(salto,nX);
                 imprimir(alinea_i,nX);
-                imprimir(espaciado, nX);
+                if(termica == TRUE)
+                    imprimir(espaciado_termica,nX);
+                else
+                    imprimir(espaciado,nX);
                 //Inserta la informaciï¿œn del ticket
                 if(conecta_bd() == -1){
                         g_print("\nNo me puedo conectar a la base de datos\n");
@@ -2900,7 +2923,10 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 
                                 imprimir(tamano2,nX);
                                 imprimir(alinea_i,nX);
-                                //imprimir(espaciado, nX);
+                                if(termica == TRUE)
+                                    imprimir(espaciado_termica,nX);
+                                else
+                                    imprimir(espaciado,nX);
 
                                 sprintf(c, "Fecha: %c%c/%c%c/%c%c%c%c       Hora: %s",listatipos[1][8],listatipos[1][9],listatipos[1][5],listatipos[1][6],listatipos[1][0],listatipos[1][1],listatipos[1][2],listatipos[1][3],listatipos[2]);
                                 imprimir(c,nX);
@@ -3048,7 +3074,7 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 								imprimir(resetea, nX);
 								imprimir(alinea_c, nX);
 								imprimir(negrita_subraya,nX);
-								imprimir("RANCHO EL TORREON",nX);
+								imprimir("EL TORREON",nX);
 								imprimir(cancela,nX);
 								imprimir(salto,nX);
 								imprimir(alinea_c, nX);
@@ -3065,7 +3091,10 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 								imprimir(c,nX);
 								imprimir(salto,nX);
 								imprimir(resetea,nX);
-								imprimir(espaciado, nX);
+								if(termica == TRUE)
+                                                                    imprimir(espaciado_termica,nX);
+                                                                else
+                                                                    imprimir(espaciado,nX);
 								sprintf(c, "Cajero(a): ");
 								imprimir(c,nX);
 								imprimir(salto,nX);
@@ -4478,7 +4507,10 @@ TERMINA LA CONFIGURACION DE LA IMPRESORA*/
 								return (1);
 							}else{
 								imprimir(resetea,nX);
-								imprimir(espaciado,nX);
+								if(termica == TRUE)
+                                                                    imprimir(espaciado_termica,nX);
+                                                                else
+                                                                    imprimir(espaciado,nX);
 								while((row = mysql_fetch_row(resultado)))
 								{
 									for(i=0; i < 5;i++) //Guarda todo el arreglo en listapos

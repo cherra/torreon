@@ -1,5 +1,6 @@
 # /dev/lp0
 # /dev/ttyS1
+termica 
 sincajon
 credito serial 4
 contado serial 4
