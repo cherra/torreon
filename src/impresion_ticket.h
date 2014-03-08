@@ -1293,6 +1293,7 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 							}else if(k==1){
 								if(strcmp(cadconf,"serial") == 0) impresora_nombre[m][0] = 1;  //Serial
 								else if(strcmp(cadconf,"paralelo") == 0) impresora_nombre[m][0] = 0; //Paralela
+                                                                else if(strcmp(cadconf,"usb") == 0) impresora_nombre[m][0] = 3; //USB
 								else if(strcmp(cadconf,"remoto") == 0) impresora_nombre[m][0] = 2; //Red
 								//printf("->Paralelo (0) o Serial (1) %s\n<-",cadconf);
 							}else if(k==2){
@@ -1321,6 +1322,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 		strcat(impresora_credito,"lp");
 	else if((impresora_nombre[arr_impresora_credito][0]) == 1)
 		strcat(impresora_credito,"ttyS");
+        else if((impresora_nombre[arr_impresora_credito][0]) == 3)
+		strcat(impresora_credito,"usblp");
 	else
 		strcpy(impresora_credito,"-d miniprinter -o raw -h 192.168.0.");
 	printf("Configuracion Credito antes de concatenar: %s\n", impresora_credito);
@@ -1333,6 +1336,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 		strcat(impresora_contado,"lp");
 	else if((impresora_nombre[arr_impresora_contado][0]) == 1)
 		strcat(impresora_contado,"ttyS");
+        else if((impresora_nombre[arr_impresora_contado][0]) == 3)
+		strcat(impresora_credito,"usblp");
 	else
 		strcpy(impresora_contado,"-d miniprinter -o raw -h 192.168.0.");
 	sprintf(cad_temporal,"%d",impresora_nombre[arr_impresora_contado][1]);
@@ -1344,6 +1349,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 		strcat(impresora_factura,"lp");
 	else if((impresora_nombre[arr_impresora_factura][0]) == 1)
 		strcat(impresora_factura,"ttyS");
+        else if((impresora_nombre[arr_impresora_factura][0]) == 3)
+		strcat(impresora_credito,"usblp");
 	else
 		strcpy(impresora_factura,"-d miniprinter -o raw -h 192.168.0.");
 	sprintf(cad_temporal,"%d",impresora_nombre[arr_impresora_factura][1]);
@@ -1355,6 +1362,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 		strcat(impresora_corte_caja,"lp");
 	else if((impresora_nombre[arr_impresora_corte_caja][0]) == 1)
 		strcat(impresora_corte_caja,"ttyS");
+        else if((impresora_nombre[arr_impresora_corte_caja][0]) == 3)
+		strcat(impresora_credito,"usblp");
 	else
 		strcpy(impresora_corte_caja,"-d miniprinter -o raw -h 192.168.0.");
 	sprintf(cad_temporal,"%d",impresora_nombre[arr_impresora_corte_caja][1]);
@@ -1366,6 +1375,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 		strcat(impresora_credito_abono,"lp");
 	else if((impresora_nombre[arr_impresora_credito_abono][0]) == 1)
 		strcat(impresora_credito_abono,"ttyS");
+        else if((impresora_nombre[arr_impresora_credito_abono][0]) == 3)
+		strcat(impresora_credito,"usblp");
 	else
 		strcpy(impresora_credito_abono,"-d miniprinter -o raw -h 192.168.0.");
 	sprintf(cad_temporal,"%d",impresora_nombre[arr_impresora_credito_abono][1]);
@@ -1377,6 +1388,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 		strcat(impresora_corte_all_caja,"lp");
 	else if((impresora_nombre[arr_impresora_corte_all_caja][0]) == 1)
 		strcat(impresora_corte_all_caja,"ttyS");
+        else if((impresora_nombre[arr_impresora_corte_all_caja][0]) == 3)
+		strcat(impresora_credito,"usblp");
 	else
 		strcpy(impresora_corte_all_caja,"-d miniprinter -o raw -h 192.168.0.");
 	sprintf(cad_temporal,"%d",impresora_nombre[arr_impresora_corte_all_caja][1]);
@@ -1389,6 +1402,8 @@ int imprimirticket(char *id_venta_char, char tipo[20], double pago_num, ...){
 		strcat(impresora_pedidos_paso1,"lp");
 	else if((impresora_nombre[arr_impresora_pedidos_paso1][0]) == 1)
 		strcat(impresora_pedidos_paso1,"ttyS");
+        else if((impresora_nombre[arr_impresora_pedidos_paso1][0]) == 3)
+		strcat(impresora_credito,"usblp");
 	else
 		strcpy(impresora_pedidos_paso1,"-d miniprinter -o raw -h 192.168.0.");
 	sprintf(cad_temporal,"%d",impresora_nombre[arr_impresora_pedidos_paso1][1]);
